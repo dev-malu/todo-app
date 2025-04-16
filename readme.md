@@ -7,4 +7,4 @@ Creates day to day to do list.
 Configure the `.env` file using the `.env.template` file.
 
 - npm install
-- npm run dev
+- npm run start

@@ -8,6 +8,7 @@ router.get("/", async (req, res) => {
   try {
     const searchQuery = req.query.search || "";
     const todos = await Todo.find({
+      userId: req.userId,
       title: new RegExp(searchQuery, "i"),
     })
       .lean()
@@ -28,6 +29,7 @@ router.post("/", async (req, res) => {
       title: req.body.title,
       date: req.body.date,
       status: req.body.status,
+      userId: req.userId,
     });
     const todoItem = await newTodoItem.save();
     res.status(201).json({
@@ -44,6 +46,8 @@ router.put("/:id", async (req, res) => {
     const updatedTodo = await Todo.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
+    }).where({
+      userId: req.userId,
     });
     if (!updatedTodo)
       return res.status(404).json({ error: "TodoItem not found" });
@@ -55,7 +59,9 @@ router.put("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   try {
-    const deleteTodo = await Todo.findByIdAndDelete(req.params.id);
+    const deleteTodo = await Todo.findByIdAndDelete(req.params.id).where({
+      userId: req.userId,
+    });
     if (!deleteTodo)
       return res.status(404).json({ error: "Todo Item not found" });
     res.json({ message: "Todo Item deleted successfully", deleteTodo });

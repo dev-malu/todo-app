@@ -10,6 +10,11 @@ const todoSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     status: {
       type: String,
       enum: TODO_STATUS_OPTIONS,

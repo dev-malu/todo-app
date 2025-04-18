@@ -5,169 +5,121 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <title>To do app</title>
+  <title>Login</title>
 </head>
 
-<body>
-  <form action="" class="grid grid-cols-[2fr_1fr_1fr_0.5fr_0.5fr] gap-4 mt-5 p-2 mx-4 my-4 mb-4">
-    <div>
-      <label>Todo</label>
-      <input type="text" class="itemTitle border border-gray-300 p-2 rounded w-full">
-    </div>
-    <div>
-      <label>Date</label>
-      <input type="date" class="date border border-gray-300 p-2 rounded w-full">
-    </div>
-    <div>
-      <label>Status</label>
-      <select name="status" class="status w-full border border-gray-300 px-2 py-[.6rem] rounded">
-        <option value="pending">pending</option>
-        <option value="in progress">in progress</option>
-      </select>
-    </div>
-    <div class="flex justify-end flex-col">
-      <button type="submit" class="bg-blue-400 text-white px-4 py-2 w-full rounded hover:bg-blue-600 cursor-pointer">Create</button>
-    </div>
-    <div class="flex justify-end flex-col">
-      <button class="bg-red-400 text-white px-4 py-2 w-full rounded hover:bg-red-600 cursor-pointer">Cancel</button>
-    </div>
-  </form>
-  <div class="flex justify-end mb-4 gap-4 m-4">
-    <input type="search" placeholder="search" class="border border-gray-300 p-2 rounded">
-    <button class="border border-gray-300 text-center rounded p-2 bg-pink-300 hover:bg-pink-600 cursor-pointer">Search</button>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="signupEl bg-white p-8 rounded-lg shadow-md w-full max-w-md hidden">
+    <h2 class="signup text-2xl font-bold mb-4 text-center text-indigo-600">Signup</h2>
+    <form class="signup-form space-y-4 mb-8">
+      <input type="text" class="signupEmail border border-gray-300 p-2 rounded w-full" placeholder="Email" required />
+      <input type="text" class="signupUsername border border-gray-300 p-2 rounded w-full" placeholder="Username" required />
+      <input type="password" class="signupPassword border border-gray-300 p-2 rounded w-full" placeholder="Password" required />
+      <button type="submit" class="border border-gray-300 text-center rounded p-2 bg-green-100 hover:bg-green-600 cursor-pointer">Signup</button>
+    </form>
+    <p class="text-center mt-6 text-sm text-gray-600"> Existing user? <a href="#" class="show-login text-indigo-400">Login</a></p>
   </div>
-  <div class="list-container grid grid-cols-[2fr_1fr_1fr_0.5fr_0.5fr] gap-3  border border-gray-300 p-3 rounded  bg-yellow-100 m-5"></div>
-  <template class="template">
-    <input class="todoTitle"></input>
-    <input type="date" class="todoDate"></input>
-    <select class="todoStatus"></select>
-    <div class="update border border-gray-300 text-center rounded p-1 bg-green-100 hover:bg-green-600 cursor-pointer">Update</div>
-    <div class="delete border border-gray-300 text-center rounded p-1 bg-red-100 hover:bg-red-600 cursor-pointer">Detele</div>
-  </template>
+  <div class="loginEl bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <h2 class="login text-2xl font-bold mb-4 text-center text-indigo-600">Login</h2>
+    <form class="login-form space-y-4 mb-8">
+      <input type="text" class="identifier border border-gray-300 p-2 rounded w-full" placeholder="Username or Email">
+      <input type="password" class="loginPassword border border-gray-300 p-2 rounded w-full" placeholder="Password" required>
+      <button type="submit" class="border border-gray-300 text-center rounded p-2 bg-green-100 hover:bg-green-600 cursor-pointer">Login</button>
+    </form>
+    <p class="text-center mt-6 text-sm text-gray-600">Not an Existing user? <a href="#" class="show-signup text-indigo-400">SignUp</a></p>
+  </div>
   <script>
-    const apiUrl = '/api/todo';
-    const listContainer = document.querySelector('.list-container');
-    const templateEl = document.querySelector('.template');
-    let options = [];
+    let apiUrl = 'http://localhost:3000/api';
 
-    document.querySelector('input[type=search]').addEventListener('input', function() {
-      const searchTerm = this.value;
-      fetchTodos(searchTerm);
-    })
+    const loginEl = document.querySelector('.loginEl');
+    const signupEl = document.querySelector('.signupEl');
 
-    async function fetchTodos(search = "") {
-      try {
-        const res = await fetch(apiUrl + "?search=" + search);
-        const todos = await res.json();
-        renderTodo(todos);
-      } catch (error) {
-        console.log('fetch failed', error);
-      }
-    }
-
-    async function populateStatusOptions() {
-      const res = await fetch(`${apiUrl}/status-options`);
-      options = await res.json();
-
-      const statusSelect = document.querySelector('.status');
-      statusSelect.classList.add('border', 'border-gray-300', 'p-2', 'rounded', 'w-full');
-
-      statusSelect.innerHTML = '';
-
-      options.forEach((status) => {
-        const optionEl = document.createElement('option');
-        optionEl.value = status;
-        optionEl.textContent = status;
-        statusSelect.appendChild(optionEl);
-      });
-    }
-
-    function renderTodo(todos) {
-      listContainer.innerHTML = '';
-      todos.forEach((todo) => {
-
-        const clone = templateEl.content.cloneNode(true);
-        const title = clone.querySelector('.todoTitle');
-        const date = clone.querySelector('.todoDate');
-        const statusSelect = clone.querySelector('.todoStatus');
-        const updateBtn = clone.querySelector('.update');
-        const deleteBtn = clone.querySelector('.delete');
-
-        options.forEach((option) => {
-          const op = document.createElement('option');
-          op.value = option;
-          op.textContent = option;
-          statusSelect.appendChild(op);
-        })
-
-        todo.date = todo.date.split('T').splice(0, 1);
-
-        title.value = todo.title;
-        date.value = todo.date;
-        statusSelect.value = todo.status;
-
-        updateBtn.addEventListener('click', async () => {
-
-          const updatedTodo = {
-            title: title.value,
-            date: date.value,
-            status: statusSelect.value
-          }
-
-          try {
-            const res = await fetch(`${apiUrl}/${todo._id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-type': 'application/json'
-              },
-              body: JSON.stringify(updatedTodo)
-            });
-            fetchTodos();
-          } catch (error) {
-            console.log("Update failed: ", error);
-          }
-        });
-
-        deleteBtn.addEventListener('click', async () => {
-          await fetch(`${apiUrl}/${todo._id}`, {
-            method: "DELETE",
-          });
-          fetchTodos();
-        });
-
-        listContainer.appendChild(clone);
-      })
-    }
-
-    async function createTodo(data) {
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-type": "application/json"
-        },
-        body: JSON.stringify(data)
-      });
-      const result = await res.json();
-      fetchTodos();
-    }
-
-    const form = document.querySelector('form');
-    form.addEventListener('submit', (e) => {
+    document.querySelector('.show-signup').addEventListener('click', (e) => {
       e.preventDefault();
-      const title = document.querySelector('.itemTitle').value;
-      const date = document.querySelector('.date').value;
-      const status = document.querySelector('.status').value;
-
-      createTodo({
-        title,
-        date,
-        status
-      });
-
-      form.reset();
+      loginEl.classList.add('hidden');
+      signupEl.classList.remove('hidden');
     });
-    fetchTodos();
-    populateStatusOptions();
+    document.querySelector('.show-login').addEventListener('click', (e) => {
+      e.preventDefault();
+      signupEl.classList.add('hidden');
+      loginEl.classList.remove('hidden');
+    });
+
+
+
+    //signup
+    document.querySelector('.signup-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.querySelector('.signupEmail').value;
+      const username = document.querySelector('.signupUsername').value;
+      const password = document.querySelector('.signupPassword').value;
+
+      try {
+        const res = await fetch(`${apiUrl}/user/signup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            password,
+            username
+          })
+        });
+
+        const data = await res.json();
+
+        console.log("Response status:", res.status); // 👀 Log status code
+        console.log("Response body:", data); // 👀 Log body
+
+        if (res.ok) {
+          alert("Signup successfull");
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('username', data.user.username);
+          window.location.href = "/todo.html"
+        } else {
+          console.log(data.message);
+          alert('Signup Failed');
+        }
+      } catch (error) {
+        console.log('Error');
+        alert('Error during signup');
+      }
+    });
+
+    //login
+    document.querySelector('.login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const identifier = document.querySelector('.identifier').value;
+      const password = document.querySelector('.loginPassword').value;
+
+      try {
+
+        const res = await fetch(`${apiUrl}/user/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            identifier,
+            password
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('username', data.user.username);
+          alert("Login successfull");
+          window.location.href = "/todo.html"
+        } else {
+          console.log(data.message);
+          alert('Login failed');
+        }
+      } catch (error) {
+        console.log(error);
+        alert('Error during login');
+      }
+    });
   </script>
 </body>
 

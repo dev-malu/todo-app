@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3/build/jwt-decode.min.js"></script>
+  <title>To do app</title>
+</head>
+
+<body>
+  <div class="flex justify-end item-center mb-4 gap-4 m-4">
+    <h2 class="user text-right"><a href="/"></a></h2>
+    <button class="logout bg-red-400 text-white px-4 py-2  rounded hover:bg-red-600 cursor-pointer">Logout</button>
+  </div>
+  <form action="" class="grid grid-cols-[2fr_1fr_1fr_0.5fr_0.5fr] gap-4 mt-5 p-2 mx-4 my-4 mb-4">
+    <div>
+      <label>Todo</label>
+      <input type="text" class="itemTitle border border-gray-300 p-2 rounded w-full">
+    </div>
+    <div>
+      <label>Date</label>
+      <input type="date" class="date border border-gray-300 p-2 rounded w-full">
+    </div>
+    <div>
+      <label>Status</label>
+      <select name="status" class="status w-full border border-gray-300 px-2 py-[.6rem] rounded">
+        <option value="pending">pending</option>
+        <option value="in progress">in progress</option>
+      </select>
+    </div>
+    <div class="flex justify-end flex-col">
+      <button type="submit" class="bg-blue-400 text-white px-4 py-2 w-full rounded hover:bg-blue-600 cursor-pointer">Create</button>
+    </div>
+    <div class="flex justify-end flex-col">
+      <button class="bg-red-400 text-white px-4 py-2 w-full rounded hover:bg-red-600 cursor-pointer">Cancel</button>
+    </div>
+  </form>
+  <div class="flex justify-end mb-4 gap-4 m-4">
+    <input type="search" placeholder="search" class="border border-gray-300 p-2 rounded">
+    <button class="border border-gray-300 text-center rounded p-2 bg-pink-300 hover:bg-pink-600 cursor-pointer">Search</button>
+  </div>
+  <div class="list-container grid grid-cols-[2fr_1fr_1fr_0.5fr_0.5fr] gap-3  border border-gray-300 p-3 rounded  bg-yellow-100 m-5"></div>
+  <template class="template">
+    <input class="todoTitle"></input>
+    <input type="date" class="todoDate"></input>
+    <select class="todoStatus"></select>
+    <div class="update border border-gray-300 text-center rounded p-1 bg-green-100 hover:bg-green-600 cursor-pointer">Update</div>
+    <div class="delete border border-gray-300 text-center rounded p-1 bg-red-100 hover:bg-red-600 cursor-pointer">Detele</div>
+  </template>
+  <script>
+    const apiUrl = '/api/todo';
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = "/index.html";
+    const decoded = jwt_decode(token);
+    document.querySelector('.user').textContent = `${decoded.username}`;
+    const listContainer = document.querySelector('.list-container');
+    const templateEl = document.querySelector('.template');
+    let options = [];
+
+    document.querySelector('input[type=search]').addEventListener('input', function() {
+      const searchTerm = this.value;
+      fetchTodos(searchTerm);
+    })
+
+    async function fetchTodos(search = "") {
+      try {
+        const res = await fetch(apiUrl + "?search=" + search, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const todos = await res.json();
+        renderTodo(todos);
+      } catch (error) {
+        console.log('fetch failed', error);
+      }
+    }
+
+    async function populateStatusOptions() {
+      const res = await fetch(`${apiUrl}/status-options`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      options = await res.json();
+
+      const statusSelect = document.querySelector('.status');
+      statusSelect.classList.add('border', 'border-gray-300', 'p-2', 'rounded', 'w-full');
+
+      statusSelect.innerHTML = '';
+
+      options.forEach((status) => {
+        const optionEl = document.createElement('option');
+        optionEl.value = status;
+        optionEl.textContent = status;
+        statusSelect.appendChild(optionEl);
+      });
+    }
+
+    function renderTodo(todos) {
+      listContainer.innerHTML = '';
+      todos.forEach((todo) => {
+
+        const clone = templateEl.content.cloneNode(true);
+        const title = clone.querySelector('.todoTitle');
+        const date = clone.querySelector('.todoDate');
+        const statusSelect = clone.querySelector('.todoStatus');
+        const updateBtn = clone.querySelector('.update');
+        const deleteBtn = clone.querySelector('.delete');
+
+        options.forEach((option) => {
+          const op = document.createElement('option');
+          op.value = option;
+          op.textContent = option;
+          statusSelect.appendChild(op);
+        })
+
+        todo.date = todo.date.split('T').splice(0, 1);
+
+        title.value = todo.title;
+        date.value = todo.date;
+        statusSelect.value = todo.status;
+
+        updateBtn.addEventListener('click', async () => {
+
+          const updatedTodo = {
+            title: title.value,
+            date: date.value,
+            status: statusSelect.value
+          }
+
+          try {
+            const res = await fetch(`${apiUrl}/${todo._id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(updatedTodo)
+            });
+            fetchTodos();
+          } catch (error) {
+            console.log("Update failed: ", error);
+          }
+        });
+
+        deleteBtn.addEventListener('click', async () => {
+          await fetch(`${apiUrl}/${todo._id}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          fetchTodos();
+        });
+
+        listContainer.appendChild(clone);
+      })
+    }
+
+    async function createTodo(data) {
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      fetchTodos();
+    }
+
+    const form = document.querySelector('form');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = document.querySelector('.itemTitle').value;
+      const date = document.querySelector('.date').value;
+      const status = document.querySelector('.status').value;
+
+      createTodo({
+        title,
+        date,
+        status
+      });
+
+      form.reset();
+    });
+
+    const logout = document.querySelector('.logout').addEventListener('click', () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      window.location.href = '/index.html';
+    });
+    fetchTodos();
+    populateStatusOptions();
+  </script>
+</body>
+
+</html>
